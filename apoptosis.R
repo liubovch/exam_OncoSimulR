@@ -1,5 +1,6 @@
 library("OncoSimulR")
 library("ggplot2")
+library("doParallel")
 
 set.seed(1)
 
@@ -87,6 +88,7 @@ popStats <- function(osp,x){
   # boxplot
     ggplot(stack(df), aes(x = ind, y = values)) +
     geom_boxplot()
+    return(df)
 }
 
 
@@ -122,88 +124,90 @@ return(r)
 }
 
 
-#a is the cost of producing the paracrine factor
-#b the benefit of receiving the paracrine factor
-#c the benefit of producing the autocrine factor
-
-a <- 2
-b <- 6
-c <- 3
-
-r <- createdf_apoptosis(a,b,c)
-
-osi<-simulation(r)
-
-
-
-
-
-
-
-
-
-#############################################
-# Case Study: Angiogenesis
-############################################
-
-createdf_angiogenesis <- function(i,j){
+createdf_apoptosis_2strategies <- function(c){
   
   # Strategies:
-  # cells 1 can produce angiogenic factors at a fitness cost i 
-  # cells 2  produce no angiogenic factors. 
-  # In any case cells will get a benefit j when there is an interaction involving an angiogenic factor producing cell.
+  #  a. Cells that produce a paracrine growth factor to prevent apoptosis of neighbouring cells. 
+  #  b. Cells that produce an autocrine growth factor to prevent apoptosis of themselves. 
+  #  c. Cells susceptible to paracrine growth factors but incapable of production of factors. 
   
   
-  f1 <- paste("1+f_1*(",as.character(1-i+j),")+f_2*(",as.character(1-i+j),")",sep="")
-  f2 <- paste("1+f_1*(",as.character(1+j),")+f_2",sep="")
   
+  fb <- paste("1+f_B*(",as.character(1+c),")+f_C*(",as.character(1+c),")",sep="")
+  fc <- "1+f_B+f_C"
   
   r <- data.frame(Genotype = c("WT",
-                               "1", "2"),
+                               "B","C"),
                   Fitness = c("1",
-                              f1,
-                              f2),
+                              fa,
+                              fc),
                   stringsAsFactors = FALSE)
   
   return(r)
   
 }
 
-# i is the cost of producing and angiogenic factor
-# and j the benefit 
-# i < j polimorphic equilibrium
-j <- 2
-i <- 1
+
+#a is the cost of producing the paracrine factor
+#b the benefit of receiving the paracrine factor
+#c the benefit of producing the autocrine factor
+
+a <- 1
+b <- 3
+c <- 2
+
 isize <- 5000
 mutrate <- 1e-5
 fintime <- 1000
 
-dfang_1 <- createdf_angiogenesis(i,j)
-afeang_11 <- wraperFitnessEffects(dfang_1)
-simulOne(afeang_11,isize,mutrate,fintime)
+
+dfapop_1 <- createdf_apoptosis(a,b,c)
+afeapop_1 <- wraperFitnessEffects(dfapop_1)
+osi_1 <- simulOne(afeapop_1,isize,mutrate,fintime)
 # extended simulations with oncoSimulPop
 x <- c("", "1", "2")
-osp_1 <- simulPop(afeang_11, 100, isize=5000, mutrate=1e-5, fintime=1000)
-popstats(osp_1, x)
+osp_1 <- simulPop(afepop_1, 100, mutrate, fintime)
+pstats_1 <- popStats(osp_1, x)
 
-popSizes_1=c(5000,1000,100)
-afeagng_12 <- wraperFitnessEffects(dfang_1,popSizes_1)
-genotypes(afeang_12)
-simulOne(afeang_12,isize=5000,mutrate=1e-5,fintime=1000)
-osp_2 <- simulPop(afeang_12, 100, isize=5000, mutrate=1e-5, fintime=1000)
-popstats(osp_2, x)
+a <- 1
+b <- 2
+c <- 3
 
-popSizes_2=c(5000,100,1000)
-afeang_13 <- wraperFitnessEffects(dfang_1,popSizes_2)
-genotypes(afeagng_13)
-simulOne(afeang_13,isize=5000,mutrate=1e-5,fintime=1000)
-osp_3 <- simulPop(afeang_13, 100, isize=5000, mutrate=1e-5, fintime=1000)
-popstats(osp_3, x)
+dfapop_2 <- createdf_apoptosis(a,b,c)
+afeapop_2 <- wraperFitnessEffects(dfapop_2)
+osi_2 <- simulOne(afeapop_2,isize,mutrate,fintime)
+# extended simulations with oncoSimulPop
+osp_2 <- simulPop(afepop_2, 100, mutrate, fintime)
+pstats_2 <- popStats(osp_2, x)
+
+a <- 0
+b <- 2
+c <- 3
+
+dfapop_3 <- createdf_apoptosis(a,b,c)
+afeapop_3 <- wraperFitnessEffects(dfapop_3)
+osi_3 <- simulOne(afeapop_3,isize,mutrate,fintime)
+# extended simulations with oncoSimulPop
+osp_3 <- simulPop(afepop_3, 100, mutrate, fintime)
+pstats_3 <- popStats(osp_3, x)
 
 
-# i > j 
-# Stratey 2 displaces the others
-j <- 1
-i <- 2
-df3 <- createdf_angiogenesis(j,i)
-simulation(df3)
+a <- 0
+b <- 3
+c <- 2
+
+dfapop_4 <- createdf_apoptosis(a,b,c)
+afeapop_4 <- wraperFitnessEffects(dfapop_4)
+osi_4 <- simulOne(afeapop_4,isize,mutrate,fintime)
+# extended simulations with oncoSimulPop
+osp_4 <- simulPop(afepop_4, 100, mutrate, fintime)
+pstats_4<- popStats(osp_4, x)
+
+# Just 2 strategies
+c <- 1
+dfapop_5 <- createdf_apoptosis_2strategies(a,b,c)
+afeapop_5 <- wraperFitnessEffects(dfapop_5)
+osi_5 <- simulOne(afeapop_5,isize,mutrate,fintime)
+# extended simulations with oncoSimulPop
+osp_5 <- simulPop(afepop_5, 100, mutrate, fintime)
+pstats_5<- popStats(osp_5, x)
