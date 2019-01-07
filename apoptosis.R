@@ -8,18 +8,21 @@ set.seed(1)
 # Functions
 ####################################
 
-wraperFitnessEffects <- function(r,spPS=NULL){
-  if (!is.null(spPS)) { 
+wraperFitnessEffects <- function( r, spPS=NULL){
+  if (!is.null(spPS)){ 
     afe <- allFitnessEffects(genotFitness = r,
-                             frequencyDependentFitness = TRUE,frequencyType ='rel',spPopSizes=spPS) 
-  } else{
+                             frequencyDependentFitness = TRUE,
+                             frequencyType ='rel',
+                             spPopSizes=spPS) 
+  }else{
     afe <- allFitnessEffects(genotFitness = r,
-                             frequencyDependentFitness = TRUE,frequencyType ='rel')
+                             frequencyDependentFitness = TRUE,
+                             frequencyType ='rel')
   }
   return(afe)
 }
 
-genotypes <- function(afe,spPS){
+genotypes <- function( afe, spPS){
   eval <- evalAllGenotypes(afe, addwt = TRUE)
   plotFitnessLandscape(eval)
   eval
@@ -27,7 +30,7 @@ genotypes <- function(afe,spPS){
 
 simulOne <- function(afe,isize,mutrate,fintime){
 
-  ## Run one trayectory simulation
+  # Run one simulation
   osi <- oncoSimulIndiv(afe,
                         model = "McFL",
                         onlyCancer = FALSE,
@@ -45,12 +48,13 @@ simulOne <- function(afe,isize,mutrate,fintime){
   ## Plot genotypes sizes along time
   plot(osi, show = "genotypes", type = "line")
   plotClonePhylog(osi, N = 0)
+  
   return(osi)
 }
 
 simulPop <- function(afe,iter,isize,mutrate,fintime){
 
-  ## Run a  number of trayectory simulations defined by the parameter iter
+  # Run a number of simulations defined by the parameter iter
   osp <- oncoSimulPop(iter,afe,
                         model = "McFL",
                         onlyCancer = FALSE,
@@ -96,10 +100,10 @@ popStats <- function(osp,x){
 
 
 
-#############################################
+############################################
 # Case Study : Evasion of apoptosis
 ############################################
-createdf_apoptosis <- function(a, b, c ){
+createdf_apoptosis <- function( a, b, c ){
 
 # Strategies:
 #  a. Cells that produce a paracrine growth factor to prevent apoptosis of neighbouring cells. 
@@ -107,16 +111,18 @@ createdf_apoptosis <- function(a, b, c ){
 #  c. Cells susceptible to paracrine growth factors but incapable of production of factors. 
   
 
-fa <- paste("1+f_A*(",as.character(1-a+b),")+f_B*(",as.character(1-a),")+f_C*(",as.character(1-a),")",sep="")
-fb <- paste("1+f_A*(",as.character(1+b+c),")+f_B*(",as.character(1+c),")+f_C*(",as.character(1+c),")",sep="")
+fa <- paste("1+f_A*(",as.character(1-a+b),
+            ")+f_B*(",as.character(1-a),
+            ")+f_C*(",as.character(1-a),")",
+            sep="")
+fb <- paste("1+f_A*(",as.character(1+b+c),
+            ")+f_B*(",as.character(1+c),
+            ")+f_C*(",as.character(1+c),
+            ")",sep="")
 fc <- paste("1+f_A*(",as.character(1+b),")+f_B+f_C",sep="")
 
-r <- data.frame(Genotype = c("WT",
-                             "A", "B","C"),
-                Fitness = c("1",
-                            fa,
-                            fb,
-                            fc),
+r <- data.frame(Genotype = c("WT", "A", "B","C"),
+                Fitness = c("1", fa, fb, fc),
                 stringsAsFactors = FALSE)
 
 return(r)
@@ -132,15 +138,15 @@ createdf_apoptosis_strategiesAC <- function(a,b){
   #  c. Cells susceptible to paracrine growth factors but incapable of production of factors. 
   
   
+  fa <- paste("1+f_1*(",as.character(1-a+b),
+              ")+f_2*(",as.character(1-a),")",
+              sep="")
+  fc <- paste("1+f_1*(",as.character(1+b),
+              ")+f_2",
+              sep="")
   
-  fa <- paste("1+f_1*(",as.character(1-a+b),")+f_2*(",as.character(1-a),")",sep="")
-  fc <- paste("1+f_1*(",as.character(1+b),")+f_2",sep="")
-  
-  r <- data.frame(Genotype = c("WT",
-                               "1","2"),
-                  Fitness = c("1",
-                              fa,
-                              fc),
+  r <- data.frame(Genotype = c("WT", "1", "2"),
+                  Fitness = c("1", fa, fc),
                   stringsAsFactors = FALSE)
   
   return(r)
@@ -157,14 +163,13 @@ createdf_apoptosis_strategiesBC <- function(c){
   
   
   
-  fb <- paste("1+f_1*(",as.character(1+c),")+f_2*(",as.character(1+c),")",sep="")
+  fb <- paste("1+f_1*(", as.character(1+c),
+              ")+f_2*(", as.character(1+c),")",
+              sep="")
   fc <- "1+f_1+f_2"
   
-  r <- data.frame(Genotype = c("WT",
-                               "1","2"),
-                  Fitness = c("1",
-                              fb,
-                              fc),
+  r <- data.frame(Genotype = c("WT", "1", "2"),
+                  Fitness = c("1", fb, fc),
                   stringsAsFactors = FALSE)
   
   return(r)
@@ -185,7 +190,7 @@ mutrate <- 1e-5
 fintime <- 1000
 
 
-dfapop_1 <- createdf_apoptosis(a,b,c)
+dfapop_1 <- createdf_apoptosis(a, b, c)
 afeapop_1 <- wraperFitnessEffects(dfapop_1)
 osi_1 <- simulOne(afeapop_1, isize, mutrate, fintime)
 # extended simulations with oncoSimulPop
@@ -197,7 +202,7 @@ a <- 1
 b <- 2
 c <- 3
 
-dfapop_2 <- createdf_apoptosis(a,b,c)
+dfapop_2 <- createdf_apoptosis(a, b, c)
 afeapop_2 <- wraperFitnessEffects(dfapop_2)
 osi_2 <- simulOne(afeapop_2, isize, mutrate, fintime)
 # extended simulations with oncoSimulPop
@@ -208,7 +213,7 @@ a <- 0
 b <- 2
 c <- 3
 
-dfapop_3 <- createdf_apoptosis(a,b,c)
+dfapop_3 <- createdf_apoptosis(a, b, c)
 afeapop_3 <- wraperFitnessEffects(dfapop_3)
 osi_3 <- simulOne(afeapop_3, isize, mutrate, fintime)
 # extended simulations with oncoSimulPop
@@ -220,21 +225,24 @@ a <- 0
 b <- 3
 c <- 2
 
-dfapop_4 <- createdf_apoptosis(a,b,c)
+dfapop_4 <- createdf_apoptosis(a, b, c)
 afeapop_4 <- wraperFitnessEffects(dfapop_4)
-osi_4 <- simulOne(afeapop_4,isize,mutrate,fintime)
+osi_4 <- simulOne(afeapop_4, isize, mutrate, fintime)
 # extended simulations with oncoSimulPop
 osp_4 <- simulPop(afeapop_4, 100, isize, mutrate, fintime)
-pstats_4<- popStats(osp_4, x)
+pstats_4 <- popStats(osp_4, x)
 
-# Just strateies B(1) an C(2)
-c <- 1
+
+y <- c("", "1", "2")
+
+# Just strategies B(1) an C(2)
+c <- 2
 dfapop_5 <- createdf_apoptosis_strategiesBC(c)
 afeapop_5 <- wraperFitnessEffects(dfapop_5)
 osi_5 <- simulOne(afeapop_5, isize, mutrate, fintime)
 # extended simulations with oncoSimulPop
 osp_5 <- simulPop(afeapop_5, 100, isize, mutrate, fintime)
-pstats_5<- popStats(osp_5, x)
+pstats_5 <- popStats(osp_5, y)
 
 
 a <- 1
@@ -245,7 +253,7 @@ afeapop_6 <- wraperFitnessEffects(dfapop_6)
 osi_6 <- simulOne(afeapop_6, isize, mutrate, fintime)
 # extended simulations with oncoSimulPop
 osp_6 <- simulPop(afeapop_6, 100, isize, mutrate, fintime)
-pstats_6<- popStats(osp_6, x)
+pstats_6 <- popStats(osp_6, y)
 
 # Cost a is bigger that benefit c
 a <- 4
@@ -254,8 +262,29 @@ c <- 2
 
 dfapop_7 <- createdf_apoptosis(a,b,c)
 afeapop_7 <- wraperFitnessEffects(dfapop_7)
-osi_7 <- simulOne(afeapop_7,isize,mutrate,fintime)
+osi_7 <- simulOne(afeapop_7, isize, mutrate, fintime)
 # extended simulations with oncoSimulPop
 osp_7 <- simulPop(afeapop_7, 100, isize, mutrate, fintime)
-pstats_7<- popStats(osp_7, x)
+pstats_7 <- popStats(osp_7, x)
 #stripchart(pstats_7 ~ x, vertical = TRUE, pch = 1)
+
+# Just strategies B(1) an C(2)
+c <- -1
+dfapop_8 <- createdf_apoptosis_strategiesBC(c)
+afeapop_8 <- wraperFitnessEffects(dfapop_8)
+osi_8 <- simulOne(afeapop_8, isize, mutrate, fintime)
+# extended simulations with oncoSimulPop
+osp_8 <- simulPop(afeapop_8, 100, isize, mutrate, fintime)
+pstats_8 <- popStats(osp_8, y)
+
+# Benefit of paracrine much bigger that benefit of autocrine
+a <- 1
+b <- 5
+c <- 2
+
+dfapop_9 <- createdf_apoptosis(a,b,c)
+afeapop_9 <- wraperFitnessEffects(dfapop_9)
+osi_9 <- simulOne(afeapop_9, isize, mutrate, fintime)
+# extended simulations with oncoSimulPop
+osp_9 <- simulPop(afeapop_9, 100, isize, mutrate, fintime)
+pstats_9 <- popStats(osp_9, x)
