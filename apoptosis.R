@@ -8,29 +8,43 @@ set.seed(1)
 # Functions
 ####################################
 
-wraperFitnessEffects <- function( r, spPS=NULL){
-  if (!is.null(spPS)){ 
+# Creates an object fitnessEffects from a data frame with the genotypes and 
+# fitness specification
+# If is possible to specify also a vector with some initial population sizes 
+
+wraperFitnessEffects <- function(r,spPS=NULL){
+  if (!is.null(spPS)) { 
     afe <- allFitnessEffects(genotFitness = r,
-                             frequencyDependentFitness = TRUE,
-                             frequencyType ='rel',
-                             spPopSizes=spPS) 
-  }else{
+                             frequencyDependentFitness = TRUE,frequencyType ='rel',spPopSizes=spPS) 
+  } else{
     afe <- allFitnessEffects(genotFitness = r,
-                             frequencyDependentFitness = TRUE,
-                             frequencyType ='rel')
+                             frequencyDependentFitness = TRUE,frequencyType ='rel')
   }
   return(afe)
 }
 
-genotypes <- function( afe, spPS){
+# Receives a fitnessEffects object
+# Generates a a data frame with two columns, the Genotype and the Fitness
+# plots the fitness landscape
+
+genotypes <- function(afe){
+  # addwt = TRUE to take into account WT 
   eval <- evalAllGenotypes(afe, addwt = TRUE)
   plotFitnessLandscape(eval)
   eval
 }
 
-simulOne <- function(afe,isize,mutrate,fintime){
+# Run one oncoSimul trajectory
+# receives:
+#            afe -  fitnessEffects object 
+#            isize - initial size of the population
+#            mutrate - mutation rate
+#            fintime - maximum number ot time units to run
+# Returns an ocosimul object
 
-  # Run one simulation
+simulOne <- function(afe,isize,mutrate,fintime){
+  
+  
   osi <- oncoSimulIndiv(afe,
                         model = "McFL",
                         onlyCancer = FALSE,
@@ -44,35 +58,47 @@ simulOne <- function(afe,isize,mutrate,fintime){
                         detectionSize = NA,
                         errorHitMaxTries = FALSE,
                         errorHitWallTime = FALSE)
-
-  ## Plot genotypes sizes along time
+  
+  # Plot genotypes sizes along time
   plot(osi, show = "genotypes", type = "line")
+  # Plot a parent-child relationship of the clones
   plotClonePhylog(osi, N = 0)
   
   return(osi)
 }
 
-simulPop <- function(afe,iter,isize,mutrate,fintime){
+# Run a  number of oncoSImul trajectories defined by the parameter iter
+# receives:
+#            afe -  fitnessEffects object 
+#            isize - initial size of the population
+#            mutrate - mutation rate
+#            fintime - maximum number ot time units to run
+# Returns an ocosimulpop object
 
-  # Run a number of simulations defined by the parameter iter
+simulPop <- function(afe,iter,isize,mutrate,fintime){
+  
+  
   osp <- oncoSimulPop(iter,afe,
-                        model = "McFL",
-                        onlyCancer = FALSE,
-                        finalTime = fintime,
-                        verbosity = 0,
-                        mu = mutrate,
-                        initSize = isize,
-                        keepPhylog = FALSE,
-                        seed = NULL,
-                        detectionProb = NA,
-                        detectionSize = NA,
-                        errorHitMaxTries = FALSE,
-                        errorHitWallTime = FALSE)
+                      model = "McFL",
+                      onlyCancer = FALSE,
+                      finalTime = fintime,
+                      verbosity = 0,
+                      mu = mutrate,
+                      initSize = isize,
+                      keepPhylog = FALSE,
+                      seed = NULL,
+                      detectionProb = NA,
+                      detectionSize = NA,
+                      errorHitMaxTries = FALSE,
+                      errorHitWallTime = FALSE)
   return(osp)
   
 }
 
 # Draw a boxplot with the results of the OncoSimulPop simulation
+# Returns a dataframe with the final population for each genotype
+# for all simulations
+
 popStats <- function(osp,x){
   
   # a function to place numbers in the same order as in the df
@@ -89,12 +115,13 @@ popStats <- function(osp,x){
   for (i in osp) {
     df[nrow(df) + 1, ] <- get_right_order(i,df)
   }
+  
   # boxplot
-    ggplot(stack(df), aes(x = ind, y = values)) +
+  ggplot(stack(df), aes(x = ind, y = values)) +
     geom_boxplot()
-    return(df)
+  
+  return(df)
 }
-
 
 
 
@@ -103,6 +130,13 @@ popStats <- function(osp,x){
 ############################################
 # Case Study : Evasion of apoptosis
 ############################################
+
+# Creates a dataframe with the genotypes and its
+# fitness specification according to the apoptosis
+# game model, with the right format to be
+# used to create a fitnessEffect object with the 
+# allFitnessEffects function
+
 createdf_apoptosis <- function( a, b, c ){
 
 # Strategies:
@@ -129,13 +163,17 @@ return(r)
 
 }
 
+# Creates a dataframe with the genotypes and its
+# fitness specification according to the apoptosis
+# game model, with the right format to be
+# used to create a fitnessEffect object with the 
+# allFitnessEffects function
 
 createdf_apoptosis_strategiesAC <- function(a,b){
   
   # Strategies:
-  #  a. Cells that produce a paracrine growth factor to prevent apoptosis of neighbouring cells. 
-  #  b. Cells that produce an autocrine growth factor to prevent apoptosis of themselves. 
-  #  c. Cells susceptible to paracrine growth factors but incapable of production of factors. 
+  #  a. (1) Cells that produce a paracrine growth factor to prevent apoptosis of neighbouring cells.
+  #  c. (2) Cells susceptible to paracrine growth factors but incapable of production of factors. 
   
   
   fa <- paste("1+f_1*(",as.character(1-a+b),
@@ -154,13 +192,17 @@ createdf_apoptosis_strategiesAC <- function(a,b){
 }
 
 
+# Creates a dataframe with the genotypes and its
+# fitness specification according to the apoptosis
+# game model, with the right format to be
+# used to create a fitnessEffect object with the 
+# allFitnessEffects function
+
 createdf_apoptosis_strategiesBC <- function(c){
   
   # Strategies:
-  #  a. Cells that produce a paracrine growth factor to prevent apoptosis of neighbouring cells. 
-  #  b. Cells that produce an autocrine growth factor to prevent apoptosis of themselves. 
-  #  c. Cells susceptible to paracrine growth factors but incapable of production of factors. 
-  
+  #  b.(1) Cells that produce an autocrine growth factor to prevent apoptosis of themselves. 
+  #  c.(2) Cells susceptible to paracrine growth factors but incapable of production of factors. 
   
   
   fb <- paste("1+f_1*(", as.character(1+c),
@@ -288,3 +330,4 @@ osi_9 <- simulOne(afeapop_9, isize, mutrate, fintime)
 # extended simulations with oncoSimulPop
 osp_9 <- simulPop(afeapop_9, 100, isize, mutrate, fintime)
 pstats_9 <- popStats(osp_9, x)
+
