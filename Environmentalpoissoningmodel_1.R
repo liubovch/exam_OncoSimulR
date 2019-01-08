@@ -79,7 +79,7 @@ h <- 0.25
 r <- create_df1(e, f, g, h)
 afe <- fast_allFitnessEffects(r)
 osi_2 <- fast_oncoSimulIndiv(afe)
-plot(osi_2, show = "genotypes", type = "line", xlim= c(12, 20))
+plot(osi_2, show = "genotypes", type = "line", xlim= c(12, 1000))
 
 
 # Model 3: Expected frequencies: WT= 1, A=0, B=0
