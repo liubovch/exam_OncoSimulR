@@ -8,6 +8,10 @@ set.seed(1)
 # Functions
 ####################################
 
+# Creates an object fitnessEffects from a data frame with the genotypes and 
+# fitness specification
+# If is possible to specify also a vector with some initial population sizes 
+
 wraperFitnessEffects <- function(r,spPS=NULL){
   if (!is.null(spPS)) { 
     afe <- allFitnessEffects(genotFitness = r,
@@ -19,15 +23,28 @@ wraperFitnessEffects <- function(r,spPS=NULL){
   return(afe)
 }
 
-genotypes <- function(afe,spPS){
+# Receives a fitnessEffects object
+# Generates a a data frame with two columns, the Genotype and the Fitness
+# plots the fitness landscape
+
+genotypes <- function(afe){
+  # addwt = TRUE to take into account WT 
   eval <- evalAllGenotypes(afe, addwt = TRUE)
   plotFitnessLandscape(eval)
   eval
 }
 
+# Run one oncoSimul trajectory
+# receives:
+#            afe -  fitnessEffects object 
+#            isize - initial size of the population
+#            mutrate - mutation rate
+#            fintime - maximum number ot time units to run
+# Returns an ocosimul object
+
 simulOne <- function(afe,isize,mutrate,fintime){
   
-  ## Run one trayectory simulation
+ 
   osi <- oncoSimulIndiv(afe,
                         model = "McFL",
                         onlyCancer = FALSE,
@@ -42,15 +59,25 @@ simulOne <- function(afe,isize,mutrate,fintime){
                         errorHitMaxTries = FALSE,
                         errorHitWallTime = FALSE)
   
-  ## Plot genotypes sizes along time
+  # Plot genotypes sizes along time
   plot(osi, show = "genotypes", type = "line")
+  # Plot a parent-child relationship of the clones
   plotClonePhylog(osi, N = 0)
+  
   return(osi)
 }
 
+# Run a  number of oncoSImul trajectories defined by the parameter iter
+# receives:
+#            afe -  fitnessEffects object 
+#            isize - initial size of the population
+#            mutrate - mutation rate
+#            fintime - maximum number ot time units to run
+# Returns an ocosimulpop object
+
 simulPop <- function(afe,iter,isize,mutrate,fintime){
   
-  ## Run a  number of trayectory simulations defined by the parameter iter
+
   osp <- oncoSimulPop(iter,afe,
                       model = "McFL",
                       onlyCancer = FALSE,
@@ -69,6 +96,9 @@ simulPop <- function(afe,iter,isize,mutrate,fintime){
 }
 
 # Draw a boxplot with the results of the OncoSimulPop simulation
+# Returns a dataframe with the final population for each genotype
+# for all simulations
+
 popStats <- function(osp,x){
   
   # a function to place numbers in the same order as in the df
@@ -85,9 +115,11 @@ popStats <- function(osp,x){
   for (i in osp) {
     df[nrow(df) + 1, ] <- get_right_order(i,df)
   }
+  
   # boxplot
   ggplot(stack(df), aes(x = ind, y = values)) +
     geom_boxplot()
+  
   return(df)
 }
 
@@ -95,6 +127,12 @@ popStats <- function(osp,x){
 #############################################
 # Case Study: Angiogenesis
 ############################################
+
+# Creates a dataframe with the genotypes and its
+# fitness specification according to the angiogenesis
+# game model, with the right format to be
+# used to create a fitnessEffect object with the 
+# allFitnessEffects function
 
 createdf_angiogenesis <- function(i,j){
   
@@ -122,6 +160,7 @@ createdf_angiogenesis <- function(i,j){
 # i is the cost of producing and angiogenic factor
 # and j the benefit 
 # i < j polimorphic equilibrium
+
 j <- 2
 i <- 1
 isize <- 5000
@@ -135,6 +174,9 @@ osi_11 <- simulOne(afeang_11,isize,mutrate,fintime)
 x <- c("", "1", "2")
 osp_11 <- simulPop(afeang_11, 100, mutrate, fintime)
 pstats_11 <- popStats(osp_1, x)
+
+# Check if specifying population sizes in allFitnessEffects
+# will make any difference
 
 popSizes_1=c(5000,1000,100)
 afeang_12 <- wraperFitnessEffects(dfang_1,popSizes_1)
@@ -150,6 +192,10 @@ osi_13 <- simulOne(afeang_13,isize,mutrate,fintime)
 osp_13 <- simulPop(afeang_13, 100, isize, mutrate, fintime)
 pstats_13 <- popstats(osp_13, x)
 
+
+# i >= j 
+# Strategy 2 displaces the others
+
 i <- j <- 2
 dfang_c2 <- createdf_angiogenesis(i,j)
 afeang_c2 <- wraperFitnessEffects(dfang_c2)
@@ -158,8 +204,7 @@ osi_c2 <- simulOne(afeang_c2,isize,mutrate,fintime)
 osp_c2 <- simulPop(afeang_c2, 100, isize, mutrate, fintime)
 pstats_c2 <- popStats(osp_c2, x)
 
-# i > j 
-# Strategy 2 displaces the others
+
 j <- 1
 i <- 2
 dfang_c3 <- createdf_angiogenesis(i,j)
@@ -168,4 +213,6 @@ osi_c3 <- simulOne(afeang_c3,isize,mutrate,fintime)
 # extended simulations with oncoSimulPop
 osp_c3 <- simulPop(afeang_c3, 100, isize, mutrate, fintime)
 pstats_c3 <- popStats(osp_c3, x)
+
+
 
