@@ -394,6 +394,7 @@ osi_6 <- simulOne(afeapop_6)
 # extended simulations with oncoSimulPop
 osp_6 <- simulPop(afeapop_6)
 pstats_6 <- popStats(osp_6, y)
+getPercentages(pstats_6)
 write.table(pstats_6, file=file.path("/home/maria/Downloads/exam_OncoSimulR/results",'apoptosis_pstats_6.txt'))
 
 # Cost a is bigger that benefit c
@@ -407,6 +408,7 @@ osi_7 <- simulOne(afeapop_7)
 # extended simulations with oncoSimulPop
 osp_7 <- simulPop(afeapop_7)
 pstats_7 <- popStats(osp_7, x)
+getPercentages(pstats_7)
 write.table(pstats_7, file=file.path("/home/maria/Downloads/exam_OncoSimulR/results",'apoptosis_pstats_7.txt'))
 
 # Just strategies B(1) an C(2)
@@ -417,6 +419,7 @@ osi_8 <- simulOne(afeapop_8)
 # extended simulations with oncoSimulPop
 osp_8 <- simulPop(afeapop_8, 100)
 pstats_8 <- popStats(osp_8, y)
+getPercentages(pstats_8)
 write.table(pstats_8, file=file.path("/home/maria/Downloads/exam_OncoSimulR/results",'apoptosis_pstats_8.txt'))
 
 # Benefit of autocrine negative
@@ -426,8 +429,9 @@ c <- -1
 
 dfapop_9 <- createdf_apoptosis(a,b,c)
 afeapop_9 <- wraperFitnessEffects(dfapop_9)
-osi_9 <- simulOne(afeapop_9, isize, mutrate, fintime)
+osi_9 <- simulOne(afeapop_9)
 # extended simulations with oncoSimulPop
 osp_9 <- simulPop(afeapop_9)
-pstats_9 <- popStats(osp_9)
+pstats_9 <- popStats(osp_9,x)
+getPercentages(pstats_9)
 write.table(pstats_9, file=file.path("/home/maria/Downloads/exam_OncoSimulR/results",'apoptosis_pstats_9.txt'))
