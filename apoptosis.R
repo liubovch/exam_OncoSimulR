@@ -44,7 +44,7 @@ genotypes <- function(afe){
 
 simulOne <- function(afe,isize,mutrate,fintime){
   
-  
+ 
   osi <- oncoSimulIndiv(afe,
                         model = "McFL",
                         onlyCancer = FALSE,
@@ -77,7 +77,7 @@ simulOne <- function(afe,isize,mutrate,fintime){
 
 simulPop <- function(afe,iter,isize,mutrate,fintime){
   
-  
+
   osp <- oncoSimulPop(iter,afe,
                       model = "McFL",
                       onlyCancer = FALSE,
@@ -124,210 +124,120 @@ popStats <- function(osp,x){
 }
 
 
+# Receives a dataframe like the one returned by function popStats:
+#   Rows are the final samples from each oncoSimulIndiv
+#   object inside an OncoSimulPop object
+#   Colums correspond to the different genotypes
+# Calculates the number of cases in which polymorfic equilibrium is achieved 
+# Generates a barplot with the number of times each strategy outgrow the others
 
-
-
-############################################
-# Case Study : Evasion of apoptosis
-############################################
-
-# Creates a dataframe with the genotypes and its
-# fitness specification according to the apoptosis
-# game model, with the right format to be
-# used to create a fitnessEffect object with the 
-# allFitnessEffects function
-
-createdf_apoptosis <- function( a, b, c ){
-
-# Strategies:
-#  a. Cells that produce a paracrine growth factor to prevent apoptosis of neighbouring cells. 
-#  b. Cells that produce an autocrine growth factor to prevent apoptosis of themselves. 
-#  c. Cells susceptible to paracrine growth factors but incapable of production of factors. 
+getPercentages <- function (df_stats,initPopSize=5000){
   
-
-fa <- paste("1+f_A*(",as.character(1-a+b),
-            ")+f_B*(",as.character(1-a),
-            ")+f_C*(",as.character(1-a),")",
-            sep="")
-fb <- paste("1+f_A*(",as.character(1+b+c),
-            ")+f_B*(",as.character(1+c),
-            ")+f_C*(",as.character(1+c),
-            ")",sep="")
-fc <- paste("1+f_A*(",as.character(1+b),")+f_B+f_C",sep="")
-
-r <- data.frame(Genotype = c("WT", "A", "B","C"),
-                Fitness = c("1", fa, fb, fc),
-                stringsAsFactors = FALSE)
-
-return(r)
-
+  # remove NAs from the input data frame
+  df_stats_cp <- df_stats[complete.cases(df_stats),] 
+  na <- dim(df_stats)[1]-dim(df_stats_cp)[1]
+  if ( na > 0 ){
+    cat("Removed ",na," colums containing NA\n")
+  }
+  
+  # Cosmetic change to show WT as label in the barplot 
+  names(df_stats_cp)[1]<-paste("WT")
+  
+  # Get % of wins for each strategy
+  pal <- colorRampPalette(colors = c("lightblue", "blue"))(4)
+  barplot(colSums(df_stats_cp >= apply(df_stats_cp, 1, max)), main = "Winning strategies", 
+          xlab = "Genotypes",col = pal)
+  
+  # get % of polymorfic equilibrium
+  polim_eq <-  sum(rowSums(df_stats_cp > initPopSize-100) >=2)
+  cat("Number of polymorphic equilibriums achived: "
+      , polim_eq,"\n")
+  # If we have polimorphic equilibrium, remove this cases to calculate the number of times 
+  # each strategy/genotype wins in solitary
+  if (polim_eq > 0){
+    # creates a results matrix without the polimorphic equilibrium cases
+    df_stats_nopoleq <- df_stats_cp[rowSums(df_stats_cp > initPopSize-100)==1,]
+    # Get % of solely wins for each strategy
+    print("Winners in solitary %\n")
+    print(colSums(df_stats_nopoleq  >= apply(df_stats_nopoleq , 1, max))) 
+  }
+  
+  
 }
 
+
+#############################################
+# Case Study: Angiogenesis
+############################################
+
 # Creates a dataframe with the genotypes and its
-# fitness specification according to the apoptosis
+# fitness specification according to the angiogenesis
 # game model, with the right format to be
 # used to create a fitnessEffect object with the 
 # allFitnessEffects function
 
-createdf_apoptosis_strategiesAC <- function(a,b){
+createdf_angiogenesis <- function(i,j){
   
   # Strategies:
-  #  a. (1) Cells that produce a paracrine growth factor to prevent apoptosis of neighbouring cells.
-  #  c. (2) Cells susceptible to paracrine growth factors but incapable of production of factors. 
+  # cells 1 can produce angiogenic factors at a fitness cost i 
+  # cells 2  produce no angiogenic factors. 
+  # In any case cells will get a benefit j when there is an interaction involving an angiogenic factor producing cell.
   
   
-  fa <- paste("1+f_1*(",as.character(1-a+b),
-              ")+f_2*(",as.character(1-a),")",
-              sep="")
-  fc <- paste("1+f_1*(",as.character(1+b),
-              ")+f_2",
-              sep="")
+  f1 <- paste("1+f_1*(",as.character(1-i+j),")+f_2*(",as.character(1-i+j),")",sep="")
+  f2 <- paste("1+f_1*(",as.character(1+j),")+f_2",sep="")
   
-  r <- data.frame(Genotype = c("WT", "1", "2"),
-                  Fitness = c("1", fa, fc),
+  
+  r <- data.frame(Genotype = c("WT",
+                               "1", "2"),
+                  Fitness = c("1",
+                              f1,
+                              f2),
                   stringsAsFactors = FALSE)
   
   return(r)
   
 }
 
+# i is the cost of producing and angiogenic factor
+# and j the benefit 
+# i < j polimorphic equilibrium
 
-# Creates a dataframe with the genotypes and its
-# fitness specification according to the apoptosis
-# game model, with the right format to be
-# used to create a fitnessEffect object with the 
-# allFitnessEffects function
-
-createdf_apoptosis_strategiesBC <- function(c){
-  
-  # Strategies:
-  #  b.(1) Cells that produce an autocrine growth factor to prevent apoptosis of themselves. 
-  #  c.(2) Cells susceptible to paracrine growth factors but incapable of production of factors. 
-  
-  
-  fb <- paste("1+f_1*(", as.character(1+c),
-              ")+f_2*(", as.character(1+c),")",
-              sep="")
-  fc <- "1+f_1+f_2"
-  
-  r <- data.frame(Genotype = c("WT", "1", "2"),
-                  Fitness = c("1", fb, fc),
-                  stringsAsFactors = FALSE)
-  
-  return(r)
-  
-}
-
-
-#a is the cost of producing the paracrine factor
-#b the benefit of receiving the paracrine factor
-#c the benefit of producing the autocrine factor
-
-a <- 1
-b <- 3
-c <- 2
-
+j <- 2
+i <- 1
 isize <- 5000
 mutrate <- 1e-5
 fintime <- 1000
 
-
-dfapop_1 <- createdf_apoptosis(a, b, c)
-afeapop_1 <- wraperFitnessEffects(dfapop_1)
-osi_1 <- simulOne(afeapop_1, isize, mutrate, fintime)
+dfang_1 <- createdf_angiogenesis(i,j)
+afeang_11 <- wraperFitnessEffects(dfang_1)
+osi_11 <- simulOne(afeang_11,isize,mutrate,fintime)
 # extended simulations with oncoSimulPop
-x <- c("", "A", "B", "C")
-osp_1 <- simulPop(afeapop_1, 100, isize, mutrate, fintime)
-pstats_1 <- popStats(osp_1, x)
+x <- c("", "1", "2")
+osp_11 <- simulPop(afeang_11, 100, mutrate, fintime)
+pstats_11 <- popStats(osp_1, x)
+# Draw one trajectory for polymorphic equilibrium
+plot(osp_11[[which(rowSums(pstats_11 > 5000)>=2, arr.ind = TRUE)[1]]],
+     show = "genotypes", type = "line")
 
-a <- 1
-b <- 2
-c <- 3
 
-dfapop_2 <- createdf_apoptosis(a, b, c)
-afeapop_2 <- wraperFitnessEffects(dfapop_2)
-osi_2 <- simulOne(afeapop_2, isize, mutrate, fintime)
+# i >= j 
+# Strategy 2 displaces the others
+
+i <- j <- 2
+dfang_c2 <- createdf_angiogenesis(i,j)
+afeang_c2 <- wraperFitnessEffects(dfang_c2)
+osi_c2 <- simulOne(afeang_c2,isize,mutrate,fintime)
 # extended simulations with oncoSimulPop
-osp_2 <- simulPop(afeapop_2, 100, isize, mutrate, fintime)
-pstats_2 <- popStats(osp_2, x)
+osp_c2 <- simulPop(afeang_c2, 100, isize, mutrate, fintime)
+pstats_c2 <- popStats(osp_c2, x)
 
-a <- 0
-b <- 2
-c <- 3
 
-dfapop_3 <- createdf_apoptosis(a, b, c)
-afeapop_3 <- wraperFitnessEffects(dfapop_3)
-osi_3 <- simulOne(afeapop_3, isize, mutrate, fintime)
+j <- 1
+i <- 2
+dfang_c3 <- createdf_angiogenesis(i,j)
+afeang_c3 <- wraperFitnessEffects(dfang_c3)
+osi_c3 <- simulOne(afeang_c3,isize,mutrate,fintime)
 # extended simulations with oncoSimulPop
-osp_3 <- simulPop(afeapop_3, 100, isize, mutrate, fintime)
-pstats_3 <- popStats(osp_3, x)
-
-
-a <- 0
-b <- 3
-c <- 2
-
-dfapop_4 <- createdf_apoptosis(a, b, c)
-afeapop_4 <- wraperFitnessEffects(dfapop_4)
-osi_4 <- simulOne(afeapop_4, isize, mutrate, fintime)
-# extended simulations with oncoSimulPop
-osp_4 <- simulPop(afeapop_4, 100, isize, mutrate, fintime)
-pstats_4 <- popStats(osp_4, x)
-
-
-y <- c("", "1", "2")
-
-# Just strategies B(1) an C(2)
-c <- 2
-dfapop_5 <- createdf_apoptosis_strategiesBC(c)
-afeapop_5 <- wraperFitnessEffects(dfapop_5)
-osi_5 <- simulOne(afeapop_5, isize, mutrate, fintime)
-# extended simulations with oncoSimulPop
-osp_5 <- simulPop(afeapop_5, 100, isize, mutrate, fintime)
-pstats_5 <- popStats(osp_5, y)
-
-
-a <- 1
-b <- 3
-#Just strategies A(1) anc C(2)
-dfapop_6 <- createdf_apoptosis_strategiesAC(a, b)
-afeapop_6 <- wraperFitnessEffects(dfapop_6)
-osi_6 <- simulOne(afeapop_6, isize, mutrate, fintime)
-# extended simulations with oncoSimulPop
-osp_6 <- simulPop(afeapop_6, 100, isize, mutrate, fintime)
-pstats_6 <- popStats(osp_6, y)
-
-# Cost a is bigger that benefit c
-a <- 4
-b <- 2
-c <- 2
-
-dfapop_7 <- createdf_apoptosis(a,b,c)
-afeapop_7 <- wraperFitnessEffects(dfapop_7)
-osi_7 <- simulOne(afeapop_7, isize, mutrate, fintime)
-# extended simulations with oncoSimulPop
-osp_7 <- simulPop(afeapop_7, 100, isize, mutrate, fintime)
-pstats_7 <- popStats(osp_7, x)
-#stripchart(pstats_7 ~ x, vertical = TRUE, pch = 1)
-
-# Just strategies B(1) an C(2)
-c <- -1
-dfapop_8 <- createdf_apoptosis_strategiesBC(c)
-afeapop_8 <- wraperFitnessEffects(dfapop_8)
-osi_8 <- simulOne(afeapop_8, isize, mutrate, fintime)
-# extended simulations with oncoSimulPop
-osp_8 <- simulPop(afeapop_8, 100, isize, mutrate, fintime)
-pstats_8 <- popStats(osp_8, y)
-
-# Benefit of paracrine much bigger that benefit of autocrine
-a <- 1
-b <- 5
-c <- 2
-
-dfapop_9 <- createdf_apoptosis(a,b,c)
-afeapop_9 <- wraperFitnessEffects(dfapop_9)
-osi_9 <- simulOne(afeapop_9, isize, mutrate, fintime)
-# extended simulations with oncoSimulPop
-osp_9 <- simulPop(afeapop_9, 100, isize, mutrate, fintime)
-pstats_9 <- popStats(osp_9, x)
-
+osp_c3 <- simulPop(afeang_c3, 100, isize, mutrate, fintime)
+pstats_c3 <- popStats(osp_c3, x)
