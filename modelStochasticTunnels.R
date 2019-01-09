@@ -1,7 +1,7 @@
 library(OncoSimulR)
 
 "DEFINITION ('ideal' simulation parameters)
-WT --> A --> B
+WT --> A --> AB
 r(WT) = 1
 r(A) = 1
 r(AB) > 1
