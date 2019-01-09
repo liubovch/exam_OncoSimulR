@@ -113,7 +113,7 @@ afe <- allFitnessEffects(genotFitness = r,
                          
                          frequencyDependentFitness = TRUE,frequencyType ='rel')
 
-osp <- oncoSimulPop(iter,afe,
+osp <- oncoSimulPop(100,afe,
                     
                     model = "McFL",
                     
@@ -175,16 +175,6 @@ popStats <- function(osp,x){
     df[nrow(df) + 1, ] <- get_right_order(i,df)
     
   }
-  
-  
-  
-  # boxplot
-  
-  ggplot(stack(df), aes(x = ind, y = values)) +
-    
-    geom_boxplot()
-  
-  
   
   return(df)
   
@@ -306,7 +296,7 @@ Taking the data form the previous example:
 
 plot(osiBC, show = "genotypes", type = "line")
 
-osp <- oncoSimulndiv(iter,afe,
+osp <- oncoSimulndiv(100,afe,
                      
                      model = "McFL",
                      
