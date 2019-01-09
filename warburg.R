@@ -1,7 +1,7 @@
 ###############################
 # case 1 AG:INV
 ###############################
-
+library(OncoSimulR)
 c <- 0.1 # WT wins out every time
 f1 <- paste("1+f_1*",as.character(0.5),"+f_2*",as.character(1),sep="")
 f2 <- paste("1+f_1*",as.character(1-c),"+f_2*",as.character(1-c/2),sep="")
