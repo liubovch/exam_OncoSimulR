@@ -295,7 +295,7 @@ Taking the data form the previous example:
 # Plot genotypes sizes along time
 
 
-osi <- oncoSimulndiv(afe,
+osi <- oncoSimulIndiv(afe,
                      
                      model = "McFL",
                      
@@ -348,7 +348,7 @@ afeBC <- allFitnessEffects(genotFitness = rBC,
                            
                            frequencyDependentFitness = TRUE,frequencyType ='rel')
 
-osiBC <- oncoSimulndiv(afeBC,
+osiBC <- oncoSimulnIndiv(afeBC,
                        
                        model = "McFL",
                        
@@ -476,7 +476,7 @@ Results from the simulations don’t quite match the main theoretical insight ex
 Here we can see the polymorphic equilibrium:
   
   ```{r}
-osi <- oncoSimulndiv(afe,
+osi <- oncoSimulIndiv(afe,
                      
                      model = "McFL",
                      
