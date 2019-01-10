@@ -328,13 +328,13 @@ plot(osi, show = "genotypes", type = "line")
 ```{r}
 c <- 2 
 
-fb <- paste("1+f_B*(",as.character(1+c),
+fb <- paste("1+f_1*(",as.character(1+c),
             
-            ")+f_C*(",as.character(1+c),
+            ")+f_2*(",as.character(1+c),
             
             ")",sep="")
 
-fc <- paste("1+f_B+f_C",sep="")
+fc <- paste("1+f_1+f_2",sep="")
 
 rBC <- data.frame(Genotype = c("WT", "1", "2"),
                   
@@ -348,7 +348,7 @@ afeBC <- allFitnessEffects(genotFitness = rBC,
                            
                            frequencyDependentFitness = TRUE,frequencyType ='rel')
 
-osiBC <- oncoSimulnIndiv(afeBC,
+osiBC <- oncoSimulIndiv(afeBC,
                        
                        model = "McFL",
                        
@@ -414,6 +414,9 @@ F2 = 1 + f_1*(1 + j) + f_2
 We model this game using OncoSimulR, with 2 genes and 3 possible genotypes, being just 3 of them viables (the other will have fitnes 0).
 
 ```{r}
+i <- 1
+j <- 2
+
 f1 <- paste("1+f_1*(",as.character(1-i+j),")+f_2*(",as.character(1-i+j),")",sep="")
 
 f2 <- paste("1+f_1*(",as.character(1+j),")+f_2",sep="")
@@ -432,36 +435,40 @@ r <- data.frame(Genotype = c("WT",
                 stringsAsFactors = FALSE)
 
 r
+
+afe <- allFitnessEffects(genotFitness = r,
+                         
+                         frequencyDependentFitness = TRUE,frequencyType ='rel')
 ```
 
 We start from a WT population of 5000 cells, and run the simulations 1000 time units, with a mutation rate of 1e-5  to see faster the dynamics of the tumor cells evolution. 
 
 ```{r}
 osp <- oncoSimulPop(100,afe,
-                    
-                    model = "McFL",
-                    
-                    onlyCancer = FALSE,
-                    
-                    finalTime = 1000,
-                    
-                    verbosity = 0,
-                    
-                    mu = 1e-5,
-                    
-                    initSize = isize,
-                    
-                    keepPhylog = FALSE,
-                    
-                    seed = NULL,
-                    
-                    detectionProb = NA,
-                    
-                    detectionSize = NA,
-                    
-                    errorHitMaxTries = FALSE,
-                    
-                    errorHitWallTime = FALSE)
+                      
+                      model = "McFL",
+                      
+                      onlyCancer = FALSE,
+                      
+                      finalTime = 1000,
+                      
+                      verbosity = 0,
+                      
+                      mu = 1e-5,
+                      
+                      initSize = 5000,
+                      
+                      keepPhylog = FALSE,
+                      
+                      seed = NULL,
+                      
+                      detectionProb = NA,
+                      
+                      detectionSize = NA,
+                      
+                      errorHitMaxTries = FALSE,
+                      
+                      errorHitWallTime = FALSE)
 
 y <- c("", "1", "2")
 
