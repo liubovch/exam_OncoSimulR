@@ -344,8 +344,8 @@ write.table(pstats_2, file=file.path("/home/maria/Downloads/exam_OncoSimulR/resu
 
 # cost of paracrine is 0, benefit of paracrine bigger than benefit of autocrine 
 a <- 0
-b <- 2
-c <- 3
+b <- 3
+c <- 2
 
 dfapop_3 <- createdf_apoptosis(a, b, c)
 afeapop_3 <- wraperFitnessEffects(dfapop_3)
