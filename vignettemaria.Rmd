@@ -347,7 +347,7 @@ afeBC <- allFitnessEffects(genotFitness = rBC,
                            
                            frequencyDependentFitness = TRUE,frequencyType ='rel')
 
-osiBC <- oncoSimulndiv(afe,
+osiBC <- oncoSimulndiv(afeBC,
                        
                        model = "McFL",
                        
