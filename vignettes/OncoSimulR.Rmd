@@ -9440,9 +9440,13 @@ and can be apreciated that the final population composition under this situation
 ```{r boxplot, eval=TRUE, echo=FALSE, fig.cap="Final population results box plot. 1000 simulations"}
 knitr::include_graphics("simulationsBoxPlot.png")
 ```
+
+
 ## Game-theory cancer progression models {#models}
 
+
 ### Hallmarks of cancer {#Hallmarks}
+
 
 The models below consider possible behaviours mutant cells can acquire in order to transform a tissue into a malignant cancer, the so-called "Hallmarks of cancer".
 
@@ -9455,8 +9459,11 @@ We make the following assumptions:
   * Different tumour genotypes (strategies) evolve from WT cells, being its initial count 0.
 
   * Genotypes are distributed homogeneously in the tumour and probability of cell interaction depends only  on genotype frequency, not in its spatial arrangement.
+  
+  
 
 #### Evasion of apoptosis {#apoptosis}
+
 
 Under normal circumstances, malignant cells will kill themselves when receiving certain signals, this is the phenomenon known as "apoptosis", or programmed cell death, a security mechanism that prevents tumor growth. Therefore,  for a cancer to be able to spread, its cells have to develop capabilities that allow them to avoid apoptosis.
 
@@ -9469,9 +9476,9 @@ In this model from @Tomlinson1997, we consider 3 strategies, each of them corres
  3. Cells don’t produce any growth factor but benefit from the factor produced by cells of type A.  
 
 The payoff matrix is the following:
+
   
-          **A    	    B 		      C**
-  
+          **A         B           C**
   **A**	  1 − a + b 	1 + b + c 	1 + b 
 
   **B **	1 − a 		  1 + c 		  1 
@@ -9499,6 +9506,7 @@ FC = 1 + f_A*(1 + b) + f_B + f_C
 We model this game using OncoSimulR, with 3 genes and 8 possible genotypes, being just 4 of them viables (the other will have fitnes 0).
 
 We start from a WT population of 5000 cells, and run the simulations 1000 time units, with a mutation rate of 1e-5  to see faster the dynamics of the tumor cells evolution.
+
 
 ```{r}
 
@@ -9713,7 +9721,9 @@ x <- c("", "A", "B", "C")
 pstats <- popStats(osp, x)
 
 getPercentages(pstats)
+
 ```
+
 
 There is therefore strong selection for autocrine growth factor production under this model as stated in @Tomlinson1997, as long as the benefit outweighs the cost (c > 0). For example, in a situation in which the benefit of the paracrine factor is bigger than the benefit of the autocrine one, strategy b will also win since its fitness has the contribution of both of them.
 
@@ -9722,7 +9732,9 @@ When considering only strategies B and C alone, we observe that strategy B also 
 
 Taking the data form the previous example:
   
-  ```{r}
+
+```{r}
+  
 # Plot genotypes sizes along time
 
 
@@ -9754,9 +9766,7 @@ osi <- oncoSimulIndiv(afe,
 
 plot(osi, show = "genotypes", type = "line")
 
-```
 
-```{r}
 c <- 2 
 
 fb <- paste("1+f_1*(",as.character(1+c),
@@ -9808,9 +9818,13 @@ osiBC <- oncoSimulIndiv(afeBC,
 # Plot genotypes sizes along time
 
 plot(osiBC, show = "genotypes", type = "line")
+
 ```
 
+
+
 #### Angiogenesis {#Angiogenesis}
+
 
 Tumors cannot grow without access to the circulatory system. Cells capable of angiogenesis produce growth factors that promote the creation of new blood vessels that can provide nutrients and oxygen to the tumor. 
 
@@ -9822,11 +9836,11 @@ In this model , taken also from @Tomlinson1997, there are 2 type of mutants:
 
 The payoff matrix is the following:
   
-  **1		2**
+        **1		        2**
   
-  **1**	1 - i + j 	1 + j 
+  **1**	  1 - i + j 	1 + j 
 
-  **2**	1 - i + j		1
+  **2**	  1 - i + j		1
 
 Being:
   
@@ -9844,7 +9858,9 @@ F2 = 1 + f_1*(1 + j) + f_2
 
 We model this game using OncoSimulR, with 2 genes and 3 possible genotypes, being just 3 of them viables (the other will have fitnes 0).
 
+
 ```{r}
+
 i <- 1
 j <- 2
 
@@ -9874,7 +9890,9 @@ afe <- allFitnessEffects(genotFitness = r,
 
 We start from a WT population of 5000 cells, and run the simulations 1000 time units, with a mutation rate of 1e-5  to see faster the dynamics of the tumor cells evolution. 
 
+
 ```{r}
+
 osp <- oncoSimulPop(100,afe,
                       
                       model = "McFL",
@@ -9906,14 +9924,18 @@ y <- c("", "1", "2")
 pstats <- popStats(osp, y)
 
 getPercentages(pstats)
+
 ```
+
 
 Results from the simulations don’t quite match the main theoretical insight extracted from @Tomlinson1997. For them, as long as the benefit j of angiogenesis is greater than the cost i of producing angiogenic factors then both types of strategies will be present in a tumour in a polymorphic equilibrium. In our case we have reached such equilibrium 30% of the times, while strategy 1 wins 26%, but we have run simulations only 100 times.
 
 
 Here we can see the polymorphic equilibrium:
+
   
-  ```{r}
+```{r}
+
 osi <- oncoSimulIndiv(afe,
                      
                      model = "McFL",
@@ -9948,7 +9970,9 @@ plot(osi, show = "genotypes", type = "line")
 
 In the case in which the cost is bigger than the benefit (i.e. i = 2,  j = 1), the result is the advantage of strategy 2 as stated by @Tomlinson1997, although there is an important fraction of the simulations in which mutants don’t get to outgrow WT cells:
 
+
 ```{r}
+
 j <- 1
 i <- 2
 
@@ -10006,9 +10030,11 @@ y <- c("", "1", "2")
 pstats <- popStats(osp, y)
 
 getPercentages(pstats)
+
 ```
   
-  This could be because mutant 2 fitness depend on mutant 1 since it is a non-producer. In cases in which this one does not reach a significant population, because the cost of producing the angiogenic factor is smaller than the benefit, mutant 2 will lost its competitive advantage against WT.
+  
+This could be because mutant 2 fitness depend on mutant 1 since it is a non-producer. In cases in which this one does not reach a significant population, because the cost of producing the angiogenic factor is smaller than the benefit, mutant 2 will lost its competitive advantage against WT.
 
 According to @Tomlinson1997, the outcome of this model depends a lot on the initial population of the mutants. In our case we can just specify a number of initial WT individuals with no mutations present. It will be interesting to be able to compare results starting from different distributions of population.
 
