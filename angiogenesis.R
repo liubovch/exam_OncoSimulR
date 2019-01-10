@@ -40,11 +40,13 @@ genotypes <- function(afe){
 #            isize - initial size of the population
 #            mutrate - mutation rate
 #            fintime - maximum number ot time units to run
+# By default: initial population 5000, mutation rate 1e-5 
+# and final time 1000
 # Returns an ocosimul object
 
-simulOne <- function(afe,isize,mutrate,fintime){
+simulOne <- function(afe,isize=5000,mutrate=1e-5,fintime=1000){
   
- 
+  
   osi <- oncoSimulIndiv(afe,
                         model = "McFL",
                         onlyCancer = FALSE,
@@ -52,7 +54,7 @@ simulOne <- function(afe,isize,mutrate,fintime){
                         verbosity = 0,
                         mu = mutrate,
                         initSize = isize,
-                        keepPhylog = TRUE,
+                        keepPhylog = FALSE,
                         seed = NULL,
                         detectionProb = NA,
                         detectionSize = NA,
@@ -61,21 +63,22 @@ simulOne <- function(afe,isize,mutrate,fintime){
   
   # Plot genotypes sizes along time
   plot(osi, show = "genotypes", type = "line")
-  # Plot a parent-child relationship of the clones
-  plotClonePhylog(osi, N = 0)
   
   return(osi)
 }
 
-# Run a  number of oncoSImul trajectories defined by the parameter iter
+
+# Run a  number of oncoSimul trajectories defined by the parameter iter
 # receives:
 #            afe -  fitnessEffects object 
 #            isize - initial size of the population
 #            mutrate - mutation rate
 #            fintime - maximum number ot time units to run
+# By default: 100 iterations, initial population 5000, mutation rate 1e-5 
+# and final time 1000
 # Returns an ocosimulpop object
 
-simulPop <- function(afe,iter,isize,mutrate,fintime){
+simulPop <- function(afe,iter=100,isize=5000,mutrate=1e-5,fintime=1000){
   
 
   osp <- oncoSimulPop(iter,afe,
@@ -124,6 +127,59 @@ popStats <- function(osp,x){
 }
 
 
+# Receives a dataframe like the one returned by function popStats:
+#   Rows are the final samples from each oncoSimulIndiv
+#   object inside an OncoSimulPop object
+#   Colums correspond to the different genotypes
+# Generates a barplot with the number of times each strategy outgrow the others
+# considering also polymorphic equilibriums
+
+getPercentages <- function (df_stats,initPopSize=5000){
+  
+  # remove 5% of initPopsize.
+  # we will make the assumption that, if at the end of the 
+  # oncoSImulIndiv simulation, population of a genotype 
+  # is bigger that roundPop, it has achieved equilibrium
+  roundPop <- initPopSize*5/10
+  
+  # remove NAs from the input data frame
+  df_stats_cp <- df_stats[complete.cases(df_stats),] 
+  na <- dim(df_stats)[1]-dim(df_stats_cp)[1]
+  if ( na > 0 ){
+    cat("Removed ",na," colums containing NA\n")
+  }
+  
+  # Cosmetic change to show WT as label in the barplot 
+  names(df_stats_cp)[1]<-paste("WT")
+  
+  #Set colour palette
+  pal <- colorRampPalette(colors = c("lightblue", "blue"))(4)
+  
+  # Create a vector indicating the simulations
+  # in which final population was significant for 
+  # each genotype
+  df_binary <-df_stats_cp > roundPop
+  names(df_binary) <- names(df_stats_cp)
+  
+  winners <- vector('character')
+    # Substitute TRUES for the name of the winner genotype 
+  for (i in 1:dim(df_binary)[2]){
+    df_binary[,i][df_binary[,i] == TRUE] <- names(df_binary)[i]
+    df_binary[,i][df_binary[,i] == FALSE] <- ""
+  }
+  # Create a vector of winners
+  for (i in 1:dim(df_binary)[1]){
+    winners[i] <- paste(df_binary[i,], collapse = '')
+  }
+  
+  # Plot the winning strategies
+  barplot(table(winners), main = "Winning strategies", xlab = "Genotypes",col = pal)
+ 
+  
+}
+
+
+
 #############################################
 # Case Study: Angiogenesis
 ############################################
@@ -161,37 +217,18 @@ createdf_angiogenesis <- function(i,j){
 # and j the benefit 
 # i < j polimorphic equilibrium
 
-j <- 2
+j <- 3
 i <- 1
-isize <- 5000
-mutrate <- 1e-5
-fintime <- 1000
 
 dfang_1 <- createdf_angiogenesis(i,j)
 afeang_11 <- wraperFitnessEffects(dfang_1)
-osi_11 <- simulOne(afeang_11,isize,mutrate,fintime)
+osi_11 <- simulOne(afeang_11)
 # extended simulations with oncoSimulPop
 x <- c("", "1", "2")
-osp_11 <- simulPop(afeang_11, 100, mutrate, fintime)
-pstats_11 <- popStats(osp_1, x)
-
-# Check if specifying population sizes in allFitnessEffects
-# will make any difference
-
-popSizes_1=c(5000,1000,100)
-afeang_12 <- wraperFitnessEffects(dfang_1,popSizes_1)
-genotypes(afeang_12)
-osi_12 <- simulOne(afeang_12,isize,mutrate,fintime)
-osp_12 <- simulPop(afeang_12, 100, isize, mutrate, fintime)
-pstats_12 <- popstats(osp_2, x)
-
-popSizes_2=c(5000,100,1000)
-afeang_13 <- wraperFitnessEffects(dfang_1,popSizes_2)
-genotypes(afeang_13)
-osi_13 <- simulOne(afeang_13,isize,mutrate,fintime)
-osp_13 <- simulPop(afeang_13, 100, isize, mutrate, fintime)
-pstats_13 <- popstats(osp_13, x)
-
+osp_11 <- simulPop(afeang_11)
+pstats_1 <- popStats(osp_11, x)
+getPercentages(pstats_1)
+write.table(pstats_1, file=file.path("/home/maria/Downloads/exam_OncoSimulR/results",'angiogenesis_pstats_1.txt'))
 
 # i >= j 
 # Strategy 2 displaces the others
@@ -199,20 +236,23 @@ pstats_13 <- popstats(osp_13, x)
 i <- j <- 2
 dfang_c2 <- createdf_angiogenesis(i,j)
 afeang_c2 <- wraperFitnessEffects(dfang_c2)
-osi_c2 <- simulOne(afeang_c2,isize,mutrate,fintime)
+osi_c2 <- simulOne(afeang_c2)
 # extended simulations with oncoSimulPop
-osp_c2 <- simulPop(afeang_c2, 100, isize, mutrate, fintime)
+osp_c2 <- simulPop(afeang_c2)
 pstats_c2 <- popStats(osp_c2, x)
-
+getPercentages(pstats_c2)
+write.table(pstats_c2, file=file.path("/home/maria/Downloads/exam_OncoSimulR/results",'angiogenesis_pstats_2.txt'))
 
 j <- 1
-i <- 2
+i <- 3
 dfang_c3 <- createdf_angiogenesis(i,j)
 afeang_c3 <- wraperFitnessEffects(dfang_c3)
-osi_c3 <- simulOne(afeang_c3,isize,mutrate,fintime)
+osi_c3 <- simulOne(afeang_c3)
 # extended simulations with oncoSimulPop
-osp_c3 <- simulPop(afeang_c3, 100, isize, mutrate, fintime)
+osp_c3 <- simulPop(afeang_c3)
 pstats_c3 <- popStats(osp_c3, x)
+getPercentages(pstats_c3)
+write.table(pstats_c3, file=file.path("/home/maria/Downloads/exam_OncoSimulR/results",'angiogenesis_pstats_3.txt'))
 
 
 

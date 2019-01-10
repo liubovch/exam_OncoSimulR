@@ -46,6 +46,21 @@ create_df1 <- function(a, b, c, d, s, t){
              stringsAsFactors = FALSE)
 }
 
+create_df2 <- function(a, b, c1, d1, c2, d2, s, t1, t2){
+  data.frame(Genotype = c("WT", "A", "B"),
+             Fitness = c(paste(as.character(a), "* f_ +",
+                               as.character(b), "* f_1 +",
+                               as.character(b), "* f_2 +",
+                               as.character(s)),
+                         paste(as.character(c1), "* f_ +",
+                               as.character(d1), "* f_1 +",
+                               as.character(t1)),
+                         paste(as.character(c2), "* f_ +",
+                               as.character(d2), "* f_2 +",
+                               as.character(t2))),
+             stringsAsFactors = FALSE)
+}
+
 fast_oncoSimulPop <- function(n, fitnessEff){
   oncoSimulPop(n, fitnessEff, 
                model = "McFL", 
@@ -60,7 +75,7 @@ fast_oncoSimulPop <- function(n, fitnessEff){
                mc.cores = 4)   # adapt to your hardware
 }
 
-osp_result_df <- function(osp){
+osp_create_df <- function(osp){
   # create an empty dataframe
   df <- data.frame(matrix(ncol = 4, nrow = 0))
   x <- c("", "A", "B", "A, B")
@@ -80,8 +95,8 @@ osp_result_df <- function(osp){
   return(df)
 }
 
-osp_boxplot <- function(osp) {
-  df <- osp_result_df(osp)
+osp_nice_plot <- function(osp) {
+  df <- osp_create_df(osp)
   df[is.na(df)] <- 0
   df$n <- 1:nrow(df)
   names(df)[1] <- "WT"
@@ -216,25 +231,13 @@ t3 <- sigma3 + s
 # T1  c1  d1  0     t1
 # T2  c2  0   d2    t2
 # fixed point: WT/T1/T2 = 0.5/0.5/0
-r1 <- data.frame(Genotype = c("WT", "A", "B"),
-                Fitness = c(paste(as.character(a), "* f_ +",
-                                  as.character(b), "* f_1 +",
-                                  as.character(b), "* f_2 +",
-                                  as.character(s)),
-                            paste(as.character(c1), "* f_ +",
-                                  as.character(d1), "* f_1 +",
-                                  as.character(t1)),
-                            paste(as.character(c2), "* f_ +",
-                                  as.character(d2), "* f_2 +",
-                                  as.character(t2))),
-                stringsAsFactors = FALSE)
-
+r1 <- create_df2(a, b, c1, d1, c2, d2, s, t1, t2)
 afe1 <- fast_allFitnessEffects(r1)
 osi1 <- fast_oncoSimulIndiv2(afe1)
 plot(osi1, show = "genotypes", type = "stacked")   # OK
 
 osp1 <- fast_oncoSimulPop(n = 100, fitnessEff = afe1)
-osp_boxplot(osp1)
+osp_nice_plot(osp1)
 
 # ω1 = 1 − (b −σ1)(b −σ2), 
 # ω2 = 1 − (b −σ1) 
@@ -255,25 +258,13 @@ w3 = w3 / w   # 0
 # T1  c1  d1  0     t1
 # T3  c3  0   d3    t3
 # fixed point: WT/T1/T3 = 0.25/0.25/0.5
-r2 <- data.frame(Genotype = c("WT", "A", "B"),
-                Fitness = c(paste(as.character(a), "* f_ +",
-                                  as.character(b), "* f_1 +",
-                                  as.character(b), "* f_2 +",
-                                  as.character(s)),
-                            paste(as.character(c1), "* f_ +",
-                                  as.character(d1), "* f_1 +",
-                                  as.character(t1)),
-                            paste(as.character(c3), "* f_ +",
-                                  as.character(d3), "* f_2 +",
-                                  as.character(t3))),
-                stringsAsFactors = FALSE)
-
+r2 <- create_df2(a, b, c1, d1, c3, d3, s, t1, t3)
 afe2 <- fast_allFitnessEffects(r2)
 osi2 <- fast_oncoSimulIndiv2(afe2)
 plot(osi2, show = "genotypes", type = "stacked")   # OK
 
 osp2 <- fast_oncoSimulPop(n = 100, fitnessEff = afe2)
-osp_boxplot(osp2)
+osp_nice_plot(osp2)
 
 ## 3. WT-T2-T3
 #     WT  T2  T3
@@ -281,23 +272,11 @@ osp_boxplot(osp2)
 # T2  c2  d2  0     t2
 # T3  c3  0   d3    t3
 # fixed point: WT/T2/T3 = 0.5/0/0.5
-r3 <- data.frame(Genotype = c("WT", "A", "B"),
-                Fitness = c(paste(as.character(a), "* f_ +",
-                                  as.character(b), "* f_1 +",
-                                  as.character(b), "* f_2 +",
-                                  as.character(s)),
-                            paste(as.character(c2), "* f_ +",
-                                  as.character(d2), "* f_1 +",
-                                  as.character(t2)),
-                            paste(as.character(c3), "* f_ +",
-                                  as.character(d3), "* f_2 +",
-                                  as.character(t3))),
-                stringsAsFactors = FALSE)
-
+r3 <- create_df2(a, b, c2, d2, c3, d3, s, t2, t3)
 afe3 <- fast_allFitnessEffects(r3)
 osi3 <- fast_oncoSimulIndiv2(afe3)
 plot(osi3, show = "genotypes", type = "stacked")   # OK
 
 osp3 <- fast_oncoSimulPop(n = 100, fitnessEff = afe3)
-osp_boxplot(osp3)
+osp_nice_plot(osp3)
 
