@@ -29,10 +29,8 @@ osi <- oncoSimulIndiv(afe,
                       model = "McFL",
                       onlyCancer = FALSE,
                       finalTime = 100000,
-                      verbosity = 0,
                       mu = c("A" = 1e-4, "B" = 1e-3),   # "A" = 2 * 
                       initSize = 100,
-                      keepPhylog = FALSE,
                       seed = NULL,
                       detectionProb = NA,
                       detectionSize = NA,
@@ -47,10 +45,8 @@ osi <- oncoSimulIndiv(afe,
                       model = "McFL",
                       onlyCancer = FALSE,
                       finalTime = 100000,
-                      verbosity = 0,
                       mu = c("A" = 1e-4, "B" = 1e-1),
                       initSize = 100,
-                      keepPhylog = FALSE,
                       seed = NULL,
                       detectionProb = NA,
                       detectionSize = NA,
@@ -70,6 +66,5 @@ mu = 1e-4
 rpob_allA_at_t <- 1 - exp(-N * mu * rho * t)
 
 #### A tumor suppressor gene and chromosomal instability ####
-# I maybe try to model. 
-# Though, I have a doubt that I will be able to repeat their results.
+# I maybe try to model.
 

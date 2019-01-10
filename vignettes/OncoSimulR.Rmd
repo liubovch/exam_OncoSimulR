@@ -10039,6 +10039,86 @@ This could be because mutant 2 fitness depend on mutant 1 since it is a non-prod
 According to @Tomlinson1997, the outcome of this model depends a lot on the initial population of the mutants. In our case we can just specify a number of initial WT individuals with no mutations present. It will be interesting to be able to compare results starting from different distributions of population.
 
 
+#### Stochastic Tunnelling  {#tunnelling}
+
+
+Here is a small example inspired by @Komarova2003 in which inactivation of a tumor supressor gene in modelled. We have three types of cells:
+
+1. **WT** have 2 intact copies of the gene.
+2. **A** have 1 intact copy of the gene.
+3. **AB** have both copies of genes inactivated.
+
+The mutation-selection network is as follows: $$WT \rightarrow A \rightarrow AB$$
+
+The probability that a cell of type **WT** reproduces is proportional to its frequency ($f$) and the "reproductive rate" ($r$) (or, more precisely, to its relative probability 
+to be chosen for reproduction):
+$$ \frac{r_{WT}f_{WT}}{r_{WT}f_{WT} + r_Af_A + r_{AB}f_{AB}} $$
+
+```{r}
+## r("WT") <- 1
+## r("A") <- 15
+## r("A, B") <- 200
+
+## Here we also specify explicitely "B" cells with their fitness equal to 0
+r <- data.frame(Genotype = c("WT", "A", "B", "A, B"),
+                Fitness = c("f_ / (f_ + 15 * f_A + 200 * f_A_B)",
+                            "15 * f_A / (f_ + 15 * f_A + 200 * f_A_B)",
+                            "0",
+                            "200 * f_A_B / (f_ + 15 * f_A + 200 * f_A_B)"),
+                stringsAsFactors = FALSE)
+
+afe <- allFitnessEffects(genotFitness = r,
+                         frequencyDependentFitness = TRUE,
+                         spPopSizes = c(97, 1, 1, 1), 
+                         frequencyType ='rel')
+evalAllGenotypes(fitnessEffects = afe)
+
+```
+
+In a *genuine two-step process*, starting from the all **WT** state, the system gets to the state where the entire population consists of cells of type **A** and finally reaches fixation in the all **AB** state:
+
+```{r}
+## Genuine two-step process
+set.seed(5)  ## for reproducibility
+osi <- oncoSimulIndiv(afe,
+                      model = "McFL",
+                      onlyCancer = FALSE,
+                      finalTime = 100000,
+                      mu = c("A" = 1e-4, "B" = 1e-3),  ## "A" = 2 * 0.5e-4 (two alleles)
+                      initSize = 100,
+                      seed = NULL,
+                      detectionProb = NA,
+                      detectionSize = NA,
+                      errorHitMaxTries = FALSE,
+                      errorHitWallTime = FALSE,
+                      sampleEvery=1)  ## to speed-up the simulation 
+plot(osi, show = "genotypes", type = "line")
+
+```
+
+
+But for some parameters range (for example, when $\mu_A \ll \mu_{AB}$), the *tunnelling* can prevail. This means that from the all **WT** state the system gets absorbed in the all **AB** state, skipping the intermediate fixation of type **A**.
+
+```{r}
+## Stochastic tunnelling
+set.seed(5)  ## for reproducibility
+osi <- oncoSimulIndiv(afe,
+                      model = "McFL",
+                      onlyCancer = FALSE,
+                      finalTime = 100000,
+                      mu = c("A" = 1e-4, "B" = 1e-1),
+                      initSize = 100,
+                      seed = NULL,
+                      detectionProb = NA,
+                      detectionSize = NA,
+                      errorHitMaxTries = FALSE,
+                      errorHitWallTime = FALSE,
+                      sampleEvery=1)  ## to speed-up the simulation
+plot(osi, show = "genotypes", type = "line")
+
+```
+
+
 \clearpage
 
 # Session info and packages used
