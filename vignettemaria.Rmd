@@ -294,9 +294,8 @@ Taking the data form the previous example:
   ```{r}
 # Plot genotypes sizes along time
 
-plot(osiBC, show = "genotypes", type = "line")
 
-osp <- oncoSimulndiv(100,afe,
+osi <- oncoSimulndiv(afe,
                      
                      model = "McFL",
                      
@@ -321,6 +320,8 @@ osp <- oncoSimulndiv(100,afe,
                      errorHitMaxTries = FALSE,
                      
                      errorHitWallTime = FALSE)
+
+plot(osi, show = "genotypes", type = "line")
 
 ```
 
