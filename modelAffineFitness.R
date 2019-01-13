@@ -1,13 +1,14 @@
 library(OncoSimulR)
 library(ggplot2)
 
+# used functions
 fast_allFitnessEffects <- function(fitnessDF){
   allFitnessEffects(genotFitness = fitnessDF,
                     frequencyDependentFitness = TRUE,
                     frequencyType ='rel')
 }
 
-fast_oncoSimulIndiv <- function(fitnessEff){
+fast_oncoSimulIndiv_t1000 <- function(fitnessEff){
   oncoSimulIndiv(fitnessEff,
                  model = "McFL",
                  onlyCancer = FALSE,
@@ -19,7 +20,7 @@ fast_oncoSimulIndiv <- function(fitnessEff){
                  errorHitWallTime = FALSE)
 }
 
-fast_oncoSimulIndiv2 <- function(fitnessEff){
+fast_oncoSimulIndiv_t5000 <- function(fitnessEff){
   oncoSimulIndiv(fitnessEff,
                  model = "McFL",
                  onlyCancer = FALSE,
@@ -32,32 +33,46 @@ fast_oncoSimulIndiv2 <- function(fitnessEff){
                  errorHitWallTime = FALSE)
 }
 
-create_df1 <- function(a, b, c, d, s, t){
+create_f_coeff1 <- function(a, d, s, alpha, beta, sigma){
+  list(a = a, d = d, s = s, c = a - alpha, b = d + beta, t = s + sigma)
+}
+
+create_f_df1 <- function(coeff){
   data.frame(Genotype = c("WT", "A", "B", "A, B"),
              Fitness = c(paste(
-               as.character(a), " * f_ +", 
-               as.character(b), " * f_1 +", 
-               as.character(s)),
+               as.character(coeff$a), " * f_ +", 
+               as.character(coeff$b), " * f_1 +", 
+               as.character(coeff$s)),
                paste(
-                 as.character(c), " * f_ +",
-                 as.character(d), " * f_1 +",
-                 as.character(t)),
+                 as.character(coeff$c), " * f_ +",
+                 as.character(coeff$d), " * f_1 +",
+                 as.character(coeff$t)),
                "0", "0"),
              stringsAsFactors = FALSE)
 }
 
-create_df2 <- function(a, b, c1, d1, c2, d2, s, t1, t2){
+create_f_coeff2 <- function(a, b, s, strategy1, strategy2){
+  list(a = a, b = b, s = s, 
+       c1 = a - strategy1$alpha, 
+       c2 = a - strategy2$alpha,
+       d1 = b - strategy1$beta,
+       d2 = b - strategy2$beta,
+       t1 = strategy1$sigma + s,
+       t2 = strategy2$sigma + s)
+}
+
+create_f_df2 <- function(coeff){
   data.frame(Genotype = c("WT", "A", "B"),
-             Fitness = c(paste(as.character(a), "* f_ +",
-                               as.character(b), "* f_1 +",
-                               as.character(b), "* f_2 +",
-                               as.character(s)),
-                         paste(as.character(c1), "* f_ +",
-                               as.character(d1), "* f_1 +",
-                               as.character(t1)),
-                         paste(as.character(c2), "* f_ +",
-                               as.character(d2), "* f_2 +",
-                               as.character(t2))),
+             Fitness = c(paste(as.character(coeff$a), "* f_ +",
+                               as.character(coeff$b), "* f_1 +",
+                               as.character(coeff$b), "* f_2 +",
+                               as.character(coeff$s)),
+                         paste(as.character(coeff$c1), "* f_ +",
+                               as.character(coeff$d1), "* f_1 +",
+                               as.character(coeff$t1)),
+                         paste(as.character(coeff$c2), "* f_ +",
+                               as.character(coeff$d2), "* f_2 +",
+                               as.character(coeff$t2))),
              stringsAsFactors = FALSE)
 }
 
@@ -100,11 +115,14 @@ osp_nice_plot <- function(osp) {
   df[is.na(df)] <- 0
   df$n <- 1:nrow(df)
   names(df)[1] <- "WT"
+  
+  # reshape df
   new_df <- reshape(df[c(1:3, 5)], direction = "long", 
                     varying=names(df[c(1:3)]), v.names=c("values"), 
                     timevar = "genotype", times = c("WT", "A", "B"))
   new_df$genotype <- factor(new_df$genotype, levels=c("WT", "A", "B"))
-  # boxplot
+  
+  # nice plot
   ggplot(new_df, 
          aes(x = genotype, y = values)) +
     geom_point(aes(colour = genotype)) +
@@ -116,60 +134,42 @@ osp_nice_plot <- function(osp) {
 # α = a − c, β = b − d, and σ = t − s
 
 #### WT and one type of T cells ####
+"Just setting some values here (they are not from the paper)"
 a <- 1.2   # independent
 d <- 1.5   # independent
 s <- 1   # idependent
 
 # 1. Simulate stable internal equilibrium: α < σ < β
-alpha1 <- -1
-beta1 <- 1
-sigma1 <- 0
-c <- a - alpha1
-b <- d + beta1
-t <- s + sigma1
+"Just setting some values here to satisfy the above condition"
+f_coeff <- create_f_coeff1(a, d, s, alpha = -1, beta = 1, sigma = 0)
 
-r <- create_df1(a, b, c, d, s, t)
+r <- create_f_df1(f_coeff)
 afe <- fast_allFitnessEffects(r)
-osi <- fast_oncoSimulIndiv(afe)
-plot(osi, show = "genotypes", type = "stacked")   # OK
+osi <- fast_oncoSimulIndiv_t1000(afe)
+plot(osi, show = "genotypes", type = "stacked")
 
 # 2. Simulate WT dominates T: σ < α, β
-alpha1 <- 0
-beta1 <- 1
-sigma1 <- -1
-c <- a - alpha1
-b <- d + beta1
-t <- s + sigma1
+f_coeff <- create_f_coeff1(a, d, s, alpha = 0, beta = 1, sigma = -1)
 
-r <- create_df1(a, b, c, d, s, t)
+r <- create_f_df1(f_coeff)
 afe <- fast_allFitnessEffects(r)
-osi <- fast_oncoSimulIndiv(afe)
-plot(osi, show = "genotypes", type = "stacked")   # OK
+osi <- fast_oncoSimulIndiv_t1000(afe)
+plot(osi, show = "genotypes", type = "stacked")
 
 # 3. Simulate T dominates WT: σ > α, β
-alpha1 <- 0
-beta1 <- -1
-sigma1 <- 1
-c <- a - alpha1
-b <- d + beta1
-t <- s + sigma1
+f_coeff <- create_f_coeff1(a, d, s, alpha = 0, beta = -1, sigma = 1)
 
-r <- create_df1(a, b, c, d, s, t)
+r <- create_f_df1(f_coeff)
 afe <- fast_allFitnessEffects(r)
-osi <- fast_oncoSimulIndiv(afe)
-plot(osi, show = "genotypes", type = "stacked")   # OK
+osi <- fast_oncoSimulIndiv_t1000(afe)
+plot(osi, show = "genotypes", type = "stacked")
 
 # 4. Simulate unstable internal equilibrium: α > σ > β
-alpha1 <- 1
-beta1 <- -1
-sigma1 <- 0
-c <- a - alpha1
-b <- d + beta1
-t <- s + sigma1
+f_coeff <- create_f_coeff1(a, d, s, alpha = 1, beta = -1, sigma = 0)
 
-r <- create_df1(a, b, c, d, s, t)
+r <- create_f_df1(f_coeff)
 afe <- fast_allFitnessEffects(r)
-osi <- fast_oncoSimulIndiv(afe)
+osi <- fast_oncoSimulIndiv_t1000(afe)
 plot(osi, show = "genotypes", type = "stacked")   # The problem is that we cannot 
 #  start our simulation from the point where WT and T are equal in quiantity, BUT:
 afe <- allFitnessEffects(genotFitness = r,
@@ -177,7 +177,7 @@ afe <- allFitnessEffects(genotFitness = r,
                           frequencyType ='rel',
                           spPopSizes = c(5000, 5000, 0, 0))
 evalAllGenotypes(afe)   # here we see that fitnesses are equal, so could have had 
-#  equilibrium if we had equal amount of WT and T cells at the start
+#  the equilibrium
 # Genotype Fitness
 # 1       WT    1.85
 # 2        A    1.85
@@ -193,7 +193,6 @@ evalAllGenotypes(afe)   # here we see that fitnesses are equal, so could have ha
 # D   b    0
 #  , where C -- cooperation, D -- defection, b -- benefit, c -- cost.
 # So, α = β = −c, and for σ < −c (t − s > c) there is a cooperation.
-# If α < σ < β -- stable equilibrium and if β < σ < α -- unstable equilibrium.
 
 
 #### WT and two types of T (three-player games, no interaction b/w T cells) ####
@@ -203,79 +202,45 @@ evalAllGenotypes(afe)   # here we see that fitnesses are equal, so could have ha
 #   strong exploitation at the cost of a disadvantage (prisoner's dilemma)
 # T3 : α3 = 0 β3 = 2 σ3 = 1 ---
 #   strong attraction of normal cells with constant fitness advantage
-alpha1 <- -1
-alpha2 <- -2
-alpha3 <- 0
-beta1 <- 1
-beta2 <- 0
-beta3 <- 2
-sigma1 <- 0
-sigma2 <- -1
-sigma3 <- 1
 a <- 0   # independent
 b <- 0   # independent
 s <- 0.5   # independent
-c1 <- a - alpha1
-c2 <- a - alpha2
-c3 <- a - alpha3
-d1 <- b - beta1
-d2 <- b - beta2
-d3 <- b - beta3
-t1 <- sigma1 + s
-t2 <- sigma2 + s
-t3 <- sigma3 + s
+strategy1 = list(alpha = -1, beta = 1, sigma = 0)
+strategy2 = list(alpha = -2, beta = 0, sigma = -1)
+strategy3 = list(alpha = 0, beta = 2, sigma = 1)
 
 ## 1. WT-T1-T2
-#     WT  T1  T2
-# WT  a   b   b     s
-# T1  c1  d1  0     t1
-# T2  c2  0   d2    t2
 # fixed point: WT/T1/T2 = 0.5/0.5/0
-r1 <- create_df2(a, b, c1, d1, c2, d2, s, t1, t2)
+coeff1 <- create_f_coeff2(a, b, s, strategy1, strategy2)
+r1 <- create_f_df2(coeff1)
 afe1 <- fast_allFitnessEffects(r1)
-osi1 <- fast_oncoSimulIndiv2(afe1)
-plot(osi1, show = "genotypes", type = "stacked")   # OK
+set.seed(1)   # fix the behaviour since others are possible
+osi1 <- fast_oncoSimulIndiv_t5000(afe1)
+plot(osi1, show = "genotypes", type = "stacked")
 
 osp1 <- fast_oncoSimulPop(n = 100, fitnessEff = afe1)
 osp_nice_plot(osp1)
 
-# ω1 = 1 − (b −σ1)(b −σ2), 
-# ω2 = 1 − (b −σ1) 
-# ω3 = 1 − (b −σ2)
-
-w1 = 1 - (b - sigma1) * (b - sigma2)
-w2 = 1 - (b - sigma1)
-w3 = 1 - (b - sigma2)
-w = w1 + w2 + w3
-w1 = w1 / w   # 0.5
-w2 = w2 / w   # 0.5
-w3 = w3 / w   # 0
-
-
 ## 2. WT-T1-T3
-#     WT  T1  T3
-# WT  a   b   b     s
-# T1  c1  d1  0     t1
-# T3  c3  0   d3    t3
 # fixed point: WT/T1/T3 = 0.25/0.25/0.5
-r2 <- create_df2(a, b, c1, d1, c3, d3, s, t1, t3)
+coeff2 <- create_f_coeff2(a, b, s, strategy1, strategy3)
+r2 <- create_f_df2(coeff2)
 afe2 <- fast_allFitnessEffects(r2)
-osi2 <- fast_oncoSimulIndiv2(afe2)
-plot(osi2, show = "genotypes", type = "stacked")   # OK
+set.seed(1)   # fix the behaviour since others are possible
+osi2 <- fast_oncoSimulIndiv_t5000(afe2)
+plot(osi2, show = "genotypes", type = "stacked")
 
 osp2 <- fast_oncoSimulPop(n = 100, fitnessEff = afe2)
 osp_nice_plot(osp2)
 
 ## 3. WT-T2-T3
-#     WT  T2  T3
-# WT  a   b   b     s
-# T2  c2  d2  0     t2
-# T3  c3  0   d3    t3
 # fixed point: WT/T2/T3 = 0.5/0/0.5
-r3 <- create_df2(a, b, c2, d2, c3, d3, s, t2, t3)
+coeff3 <- create_f_coeff2(a, b, s, strategy2, strategy3)
+r3 <- create_f_df2(coeff3)
 afe3 <- fast_allFitnessEffects(r3)
-osi3 <- fast_oncoSimulIndiv2(afe3)
-plot(osi3, show = "genotypes", type = "stacked")   # OK
+set.seed(1)   # fix the behaviour since others are possible
+osi3 <- fast_oncoSimulIndiv_t5000(afe3)
+plot(osi3, show = "genotypes", type = "stacked")
 
 osp3 <- fast_oncoSimulPop(n = 100, fitnessEff = afe3)
 osp_nice_plot(osp3)

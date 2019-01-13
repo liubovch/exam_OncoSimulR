@@ -10046,7 +10046,7 @@ Here is a small example inspired by @Komarova2003 in which inactivation of a tum
 
 1. **WT** have 2 intact copies of the gene.
 2. **A** have 1 intact copy of the gene.
-3. **AB** have both copies of genes inactivated.
+3. **AB** have both copies of gene inactivated.
 
 The mutation-selection network is as follows: $$WT \rightarrow A \rightarrow AB$$
 
@@ -10097,7 +10097,7 @@ plot(osi, show = "genotypes", type = "line")
 ```
 
 
-But for some parameters range (for example, when $\mu_A \ll \mu_{AB}$), the *tunnelling* can prevail. This means that from the all **WT** state the system gets absorbed in the all **AB** state, skipping the intermediate fixation of type **A**.
+But for some parameters range (for example, when $\mu_{AB} \gg 1/N$, where $N$ is a population size), the *tunnelling* can prevail. This means that from the all **WT** state the system gets absorbed into the all **AB** state, skipping the intermediate fixation of type **A**.
 
 ```{r}
 ## Stochastic tunnelling
