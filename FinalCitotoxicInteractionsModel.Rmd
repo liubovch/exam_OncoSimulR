@@ -1,0 +1,111 @@
+
+#Cytotoxic interactions between tumor cells
+
+Tumour cells might boost their own replicative potential at the expense of other tumour cells by evolving the capability of producing cytotoxic substances.
+
+This model has been taken from Sartakhti(2016), there are 3 strategies(or genotypes):
+
+WT: Cells producing neither cytotoxins nor resistance.
+A: Cells producing cytotoxic substances against other cells. 
+B: cells producing resistance to external cytotoxic substances.
+
+
+Fitness functions:
+
+FWT = (z-f)*f_A + z*f_B + z*f_            
+FA = (z-e-f+g)*f_A + (z-e)*f_B + (z-e+g)*f_
+FB = (z-h)*f_A + (z-h)*f_B + (z-h)*f_
+
+Where:
+z= Baseline fintess
+e= Cost of producing cytotoxin
+f= Disadvantage of being affected by cytotoxin
+g= Advantage conferred after having subjected another cell to the cytotoxin
+h= Cost of resistance to cytotoxin
+
+Results:
+Two-strategy polymorphisms between A and WT and between A and B may occur. A, B or WT may also become fixed in the population:
+
+A is favoured by small e, large g,  small f and large g
+B is favoured by small h
+WT is favoured by small f
+
+Some cases with differetn initial values of e, f, g and h have been tried
+
+First run this piece of code:
+```{r}
+library(OncoSimulR)
+
+fast_allFitnessEffects <- function(fitnessDF){
+  allFitnessEffects(genotFitness = fitnessDF,
+                    frequencyDependentFitness = TRUE,
+                    frequencyType ='rel')
+}
+
+fast_oncoSimulIndiv <- function(fitnessEff){
+  oncoSimulIndiv(fitnessEff,
+                 model = "McFL",
+                 onlyCancer = FALSE,
+                 finalTime = 5000,
+                 verbosity = 0,
+                 mu = 1e-3,
+                 initSize = 20000,
+                 keepPhylog = TRUE,
+                 seed = NULL,
+                 detectionProb = NA,
+                 detectionSize = NA,
+                 errorHitMaxTries = FALSE,
+                 errorHitWallTime = FALSE)
+}
+
+
+create_df1 <- function(e, f, g, h){
+  data.frame(Genotype = c("WT", "A", "B", "A, B"),
+             Fitness = c(paste(as.character(z-f), " * f_A +", 
+                               as.character(z)," f_B +",
+                               as.character(z)," f_"),
+                         paste(as.character(z-e-f+g), " * f_A +",
+                               as.character(z-e), " * f_B +",
+                               as.character(z-e+g), " * f_"),
+                         paste(as.character(z-h), " * f_A +",
+                               as.character(z-h), " * f_B +",
+                               as.character(z-h), " * f_"),
+                         "0"),
+             stringsAsFactors = FALSE)
+}
+
+```
+
+Modelo 1: Expected final frequencies: WT= 0.542, A=0.458, B=0
+
+```{r}
+z <- 1
+e <- 0.1
+f <- 0.4
+g <- 0.1
+h <- 0.4
+
+r <- create_df1(e, f, g, h)
+afe <- fast_allFitnessEffects(r)
+osi_1 <- fast_oncoSimulIndiv(afe)
+plot(osi_1, show = "genotypes", type = "line", xlim= c(12, 800))
+
+```
+
+Modelo 2: Expected final frequencies: WT= 1, A=0, B=0
+
+```{r}
+z <- 1
+e <- 0.3
+f <- 0.4
+g <- 0.1
+h <- 0.25
+
+r <- create_df1(e, f, g, h)
+afe <- fast_allFitnessEffects(r)
+osi_2 <- fast_oncoSimulIndiv(afe)
+plot(osi_2, show = "genotypes", type = "line", xlim= c(12, 1000))
+
+```
+
+It has been observed that when the payoffs values are very low, the model doesn't work properly because while the paper assumes that the initial frequencies for all the genotypes is the same, for OncoSimulR the WT is the initial genotype from which the otheres are derived.
